@@ -1,177 +1,88 @@
-import * as anchor from "@coral-xyz/anchor";
-import * as web3 from '@solana/web3.js';
-import { Program } from "@coral-xyz/anchor";
-import { TestSolTokenPg } from "../target/types/test_sol_token_pg";
-import { assert } from "chai";
-import { BN } from 'bn.js';
+import * as anchor from '@coral-xyz/anchor';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { Keypair } from '@solana/web3.js';
+import type { TestSolTokenPg } from '../target/types/test_sol_token_pg';
+import { PublicKey, SystemProgram} from '@solana/web3.js';
 
-
-describe("test-sol-token-pg", () => {
-  // Configure the client to use the local cluster.
+describe('SPL Token Minter', () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
+  const payer = provider.wallet as anchor.Wallet;
+  // const payer = new Keypair();
+  const program = anchor.workspace.testSolTokenPg as anchor.Program<TestSolTokenPg>;
 
-  const program = anchor.workspace.TestSolTokenPg as anchor.Program<TestSolTokenPg>;
+  // Generate new keypair to use as address for mint account.
+  const mintKeypair = new Keypair();
 
-  // set constants
-  const PROGRAM_ID = program.programId;
-  const METADATA_SEED = 'metadata';
-  const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
-  const MINT_SEED = "mint";
+  const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
-  const payer = provider.wallet.publicKey;
+  const [metadataAddress] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('metadata'),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        mintKeypair.publicKey.toBuffer(),
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
 
   const metadata = {
-    name: 'Test Sol Token',
-    symbol: 'TEST',
-    uri: "https://5vfxc4tr6xoy23qefqbj4qx2adzkzapneebanhcalf7myvn5gzja.arweave.net/7UtxcnH13Y1uBCwCnkL6APKsge0hAgacQFl-zFW9NlI",
-    decimals: 9,
+    name: 'Solana Gold',
+    symbol: 'GOLDSOL',
+    uri: 'https://raw.githubusercontent.com/solana-developers/program-examples/new-examples/tokens/tokens/.assets/spl-token.json',
   };
 
-  const mintAmount = 10;
 
-  const [mint] = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from(MINT_SEED)],
-    PROGRAM_ID,
-  );
+  it('Create an SPL Token!', async () => {
+    const info = await provider.connection.getAccountInfo(TOKEN_METADATA_PROGRAM_ID);
+    console.log("payer", info)
+    console.log("payer", TOKEN_METADATA_PROGRAM_ID)
 
-  const [metadataAddress] = web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from(METADATA_SEED),
-      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-      mint.toBuffer(),
-    ],
-    TOKEN_METADATA_PROGRAM_ID
-  );
-
-    // Helper function to confirm transactions
-    async function confirmTransaction(
-        connection: web3.Connection,
-        signature: web3.TransactionSignature,
-        desiredConfirmationStatus: web3.TransactionConfirmationStatus = 'confirmed',
-        timeout: number = 30000,
-        pollInterval: number = 1000,
-        searchTransactionHistory: boolean = false
-    ): Promise<anchor.web3.SignatureStatus> {
-        const start = Date.now();
-
-        while (Date.now() - start < timeout) {
-            const { value: statuses } = await connection.getSignatureStatuses([signature], { searchTransactionHistory });
-
-            if (!statuses || statuses.length === 0) {
-                throw new Error('Failed to get signature status');
-            }
-
-            const status = statuses[0];
-
-            if (status === null) {
-                await new Promise(resolve => setTimeout(resolve, pollInterval));
-                continue;
-            }
-
-            if (status.err) {
-                throw new Error(`Transaction failed: ${JSON.stringify(status.err)}`);
-            }
-
-            if (status.confirmationStatus && status.confirmationStatus === desiredConfirmationStatus) {
-                return status;
-            }
-
-            if (status.confirmationStatus === 'finalized') {
-                return status;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, pollInterval));
-        }
-
-        throw new Error(`Transaction confirmation timeout after ${timeout}ms`);
-    }
+    // console.log("minter", mintKeypair.publicKey)
+    // return;
 
 
 
-  it("Is initialized", async () => {
-
-    const info = await provider.connection.getAccountInfo(PROGRAM_ID);
-    console.log(info, "info");
-
-    // console.log(" Mint not found. Attempting to initialize.");
-
-    try {
-
-      const context = {
-        metadata: metadataAddress,
-        mint,
-        payer,
-        rent: web3.SYSVAR_RENT_PUBKEY,
-        systemProgram: web3.SystemProgram.programId,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+    const transactionSignature = await program.methods
+      .createToken(metadata.name, metadata.symbol, metadata.uri)
+      .accounts({
+        payer: payer.publicKey,
+        mintAccount: mintKeypair.publicKey,
+        // metadataAccount: metadataAddress,
         tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-      };
+        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([payer.payer, mintKeypair])
+      .rpc();
 
-      const txHash = await program.methods
-          .initToken(metadata)
-          .accounts(context)
-          .rpc();
-      
-      await confirmTransaction(provider.connection, txHash, 'finalized');
-      console.log("link to tx: ",`https://explorer.solana.com/tx/${txHash}?cluster=devnet`);
-
-      // const newInfo = await provider.connection.getAccountInfo(mint);
-      // console.log("mint should be init", newInfo);
-    } catch (error) {
-      if (error instanceof anchor.web3.SendTransactionError) {
-            console.error("Transaction simulation failed:", error.message);
-            console.error("Logs:", error.logs);
-      }
-        throw error;
-      }
+    console.log('Success!');
+    console.log(`   Mint Address: ${mintKeypair.publicKey}`);
+    console.log(`   Transaction Signature: ${transactionSignature}`);
   });
 
-  it("mint tokens", async () => {
+  // it('Mint some tokens to your wallet!', async () => {
+  //   // Derive the associated token address account for the mint and payer.
+  //   const associatedTokenAccountAddress = getAssociatedTokenAddressSync(mintKeypair.publicKey, payer.publicKey);
 
-    // const info = await provider.connection.getAccountInfo(mint);
-    // console.log(info, "info");
+  //   // Amount of tokens to mint.
+  //   const amount = new anchor.BN(100);
 
-    //  const destination = await anchor.utils.token.associatedAddress({
-    //   mint: mint,
-    //   owner: payer,
-    // });
+  //   // Mint the tokens to the associated token account.
+  //   const transactionSignature = await program.methods
+  //     .mintToken(amount)
+  //     .accounts({
+  //       mintAuthority: payer.publicKey,
+  //       recipient: payer.publicKey,
+  //       mintAccount: mintKeypair.publicKey,
+  //       associatedTokenAccount: associatedTokenAccountAddress,
+  //     })
+  //     .rpc();
 
-    // let initialBalance: number;
-    // try {
-    //   const balance = (await provider.connection.getTokenAccountBalance(destination))
-    //   initialBalance = balance.value.uiAmount;
-    // } catch {
-    //   // Token account not yet initiated has 0 balance
-    //   initialBalance = 0;
-    // } 
-    
-    // const context = {
-    //   mint,
-    //   destination,
-    //   payer,
-    //   rent: web3.SYSVAR_RENT_PUBKEY,
-    //   systemProgram: web3.SystemProgram.programId,
-    //   tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-    //   associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-    // };
-
-    // const txHash = await program.methods
-    //   .mintTokens(new BN(mintAmount * 10 ** metadata.decimals))
-    //   .accounts(context)
-    //   .rpc();
-    
-  //   await confirmTransaction(provider.connection, txHash);
-  //   console.log(`  https://explorer.solana.com/tx/${txHash}?cluster=devnet`);
-
-  //   const postBalance = (
-  //     await provider.connection.getTokenAccountBalance(destination)
-  //   ).value.uiAmount;
-  //   assert.equal(
-  //     initialBalance + mintAmount,
-  //     postBalance,
-  //     "Post balance should equal initial plus mint amount"
-  //   );
-  });
-
+  //   console.log('Success!');
+  //   console.log(`   Associated Token Account Address: ${associatedTokenAccountAddress}`);
+  //   console.log(`   Transaction Signature: ${transactionSignature}`);
+  // });
 });
+
+
+
