@@ -35,7 +35,7 @@ describe('SPL Token Minter', () => {
   it('Create an SPL Token!', async () => {
     const info = await provider.connection.getAccountInfo(TOKEN_METADATA_PROGRAM_ID);
     console.log("payer", info)
-    console.log("payer", TOKEN_METADATA_PROGRAM_ID)
+    // console.log("payer", TOKEN_METADATA_PROGRAM_ID)
 
     // console.log("minter", mintKeypair.publicKey)
     // return;
@@ -47,12 +47,13 @@ describe('SPL Token Minter', () => {
       .accounts({
         payer: payer.publicKey,
         mintAccount: mintKeypair.publicKey,
-        // metadataAccount: metadataAddress,
+        metadataAccount: metadataAddress,
         tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
+        // tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        // systemProgram: SystemProgram.programId,
       })
-      .signers([payer.payer, mintKeypair])
+      .signers([mintKeypair])
+      // .signers([payer.payer, mintKeypair])
       .rpc();
 
     console.log('Success!');
