@@ -82,6 +82,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@metaplex-foundation/umi-web3js-adapters@npm:^0.9.2":
+  version: 0.9.2
+  resolution: "@metaplex-foundation/umi-web3js-adapters@npm:0.9.2"
+  dependencies:
+    buffer: ^6.0.3
+  peerDependencies:
+    "@metaplex-foundation/umi": ^0.9.2
+    "@solana/web3.js": ^1.72.0
+  checksum: 0fc9cdb24059d47e4eae13e4b0e2caac39f188bb5df8cde8ff34cd482e3b3d2b20319d7bcb5b043be171ca3ad63d0e6e5d668fc8392a7128f42b014971d63eb1
+  languageName: node
+  linkType: hard
+
 "@noble/curves@npm:^1.4.2":
   version: 1.6.0
   resolution: "@noble/curves@npm:1.6.0"
@@ -565,9 +577,9 @@ __metadata:
   linkType: hard
 
 "ansi-regex@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "ansi-regex@npm:6.0.1"
-  checksum: 1ff8b7667cded1de4fa2c9ae283e979fc87036864317da86a2e546725f96406746411d0d85e87a2d12fa5abd715d90006de7fa4fa0477c92321ad3b4c7d4e169
+  version: 6.1.0
+  resolution: "ansi-regex@npm:6.1.0"
+  checksum: 495834a53b0856c02acd40446f7130cb0f8284f4a39afdab20d5dc42b2e198b1196119fe887beed8f9055c4ff2055e3b2f6d4641d0be018cdfb64fedf6fc1aac
   languageName: node
   linkType: hard
 
@@ -2065,6 +2077,7 @@ __metadata:
   dependencies:
     "@coral-xyz/anchor": ^0.29.0
     "@metaplex-foundation/mpl-token-metadata": ^3.2.1
+    "@metaplex-foundation/umi-web3js-adapters": ^0.9.2
     "@solana/spl-token": ^0.4.8
     "@solana/web3.js": ^1.95.3
     "@types/bn.js": ^5.1.0

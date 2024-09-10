@@ -1,4 +1,3 @@
-
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -27,32 +26,32 @@ pub mod test_sol_token_pg {
 
         // Cross Program Invocation (CPI)
         // Invoking the create_metadata_account_v3 instruction on the token metadata program
-        // create_metadata_accounts_v3(
-        //     CpiContext::new(
-        //         ctx.accounts.token_metadata_program.to_account_info(),
-        //         CreateMetadataAccountsV3 {
-        //             metadata: ctx.accounts.metadata_account.to_account_info(),
-        //             mint: ctx.accounts.mint_account.to_account_info(),
-        //             mint_authority: ctx.accounts.payer.to_account_info(),
-        //             update_authority: ctx.accounts.payer.to_account_info(),
-        //             payer: ctx.accounts.payer.to_account_info(),
-        //             system_program: ctx.accounts.system_program.to_account_info(),
-        //             rent: ctx.accounts.rent.to_account_info(),
-        //         },
-        //     ),
-        //     DataV2 {
-        //         name: token_name,
-        //         symbol: token_symbol,
-        //         uri: token_uri,
-        //         seller_fee_basis_points: 0,
-        //         creators: None,
-        //         collection: None,
-        //         uses: None,
-        //     },
-        //     false, // Is mutable
-        //     true,  // Update authority is signer
-        //     None,  // Collection details
-        // )?;
+        create_metadata_accounts_v3(
+            CpiContext::new(
+                ctx.accounts.token_metadata_program.to_account_info(),
+                CreateMetadataAccountsV3 {
+                    metadata: ctx.accounts.metadata_account.to_account_info(),
+                    mint: ctx.accounts.mint_account.to_account_info(),
+                    mint_authority: ctx.accounts.payer.to_account_info(),
+                    update_authority: ctx.accounts.payer.to_account_info(),
+                    payer: ctx.accounts.payer.to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    rent: ctx.accounts.rent.to_account_info(),
+                },
+            ),
+            DataV2 {
+                name: token_name,
+                symbol: token_symbol,
+                uri: token_uri,
+                seller_fee_basis_points: 0,
+                creators: None,
+                collection: None,
+                uses: None,
+            },
+            false, // Is mutable
+            true,  // Update authority is signer
+            None,  // Collection details
+        )?;
 
         msg!("Token created successfully.");
 
